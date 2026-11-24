@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-24
+
 ### Added
 
 - First release: AUX air conditioners and heat pumps controlled through the
@@ -32,4 +34,5 @@ the notes of the version's GitHub Release.
 - English, French, German and Spanish texts and documentation.
 - `SECURITY.md`, `CLAUDE.md` and this changelog.
 
-[Unreleased]: https://github.com/gboulvin/Gladys-AUX-Cloud/commits/main
+[Unreleased]: https://github.com/gboulvin/Gladys-AUX-Cloud/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/gboulvin/Gladys-AUX-Cloud/releases/tag/v0.1.0
