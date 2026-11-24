@@ -1,0 +1,604 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "AUX Cloud (AC Freedom)",
+  "description": {
+    "en": "Control your AUX air conditioners and heat pumps through the AC Freedom cloud.",
+    "fr": "Pilotez vos climatiseurs et pompes à chaleur AUX via le cloud AC Freedom.",
+    "de": "Steuern Sie Ihre AUX-Klimaanlagen und Wärmepumpen über die AC-Freedom-Cloud.",
+    "es": "Controle sus aires acondicionados y bombas de calor AUX con la nube AC Freedom."
+  },
+  "version": "0.0.0",
+  "docker_image": "ghcr.io/gboulvin/gladys-aux-cloud:0.0.0",
+  "gladys_version": ">=5.1.0",
+  "cover_image": "https://raw.githubusercontent.com/gboulvin/Gladys-AUX-Cloud/main/cover.png",
+  "categories": ["climate"],
+  "transports": ["cloud"],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": {
+        "en": "Your AC Freedom account",
+        "fr": "Votre compte AC Freedom",
+        "de": "Ihr AC-Freedom-Konto",
+        "es": "Su cuenta AC Freedom"
+      },
+      "description": {
+        "en": "Use the account of the AC Freedom mobile app, where your AUX units are already paired. The integration talks to the AUX cloud only: an Internet connection is required. Tip: create a second account in the app and share your units with it, so that Gladys does not log your phone out.",
+        "fr": "Utilisez le compte de l'application mobile AC Freedom, où vos appareils AUX sont déjà appairés. L'intégration passe uniquement par le cloud AUX : une connexion Internet est nécessaire. Astuce : créez un second compte dans l'application et partagez-lui vos appareils, pour que Gladys ne déconnecte pas votre téléphone.",
+        "de": "Verwenden Sie das Konto der mobilen App AC Freedom, in der Ihre AUX-Geräte bereits gekoppelt sind. Die Integration nutzt ausschließlich die AUX-Cloud: Eine Internetverbindung ist erforderlich. Tipp: Legen Sie in der App ein zweites Konto an und teilen Sie Ihre Geräte damit, damit Gladys Ihr Telefon nicht abmeldet.",
+        "es": "Utilice la cuenta de la aplicación móvil AC Freedom, donde sus equipos AUX ya están emparejados. La integración usa únicamente la nube de AUX: se necesita conexión a Internet. Consejo: cree una segunda cuenta en la aplicación y comparta sus equipos con ella, para que Gladys no cierre la sesión de su teléfono."
+      },
+      "links": [
+        {
+          "url": "https://github.com/gboulvin/Gladys-AUX-Cloud/blob/main/docs/en.md",
+          "label": {
+            "en": "Documentation",
+            "fr": "Documentation",
+            "de": "Dokumentation",
+            "es": "Documentación"
+          }
+        }
+      ]
+    },
+    {
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "E-mail or phone number",
+        "fr": "E-mail ou numéro de téléphone",
+        "de": "E-Mail oder Telefonnummer",
+        "es": "Correo electrónico o teléfono"
+      },
+      "description": {
+        "en": "The login of your AC Freedom account.",
+        "fr": "L'identifiant de votre compte AC Freedom.",
+        "de": "Die Anmeldung Ihres AC-Freedom-Kontos.",
+        "es": "El identificador de su cuenta AC Freedom."
+      },
+      "placeholder": {
+        "en": "e.g. me@example.com",
+        "fr": "ex. moi@exemple.fr",
+        "de": "z. B. ich@beispiel.de",
+        "es": "p. ej. yo@ejemplo.es"
+      },
+      "required": true
+    },
+    {
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "required": true
+    },
+    {
+      "key": "region",
+      "type": "select",
+      "label": {
+        "en": "Cloud region",
+        "fr": "Région du cloud",
+        "de": "Cloud-Region",
+        "es": "Región de la nube"
+      },
+      "description": {
+        "en": "The server your account was created on (Europe for most European users).",
+        "fr": "Le serveur sur lequel votre compte a été créé (Europe pour la plupart des utilisateurs européens).",
+        "de": "Der Server, auf dem Ihr Konto erstellt wurde (Europa für die meisten europäischen Nutzer).",
+        "es": "El servidor en el que se creó su cuenta (Europa para la mayoría de usuarios europeos)."
+      },
+      "required": true,
+      "default": "eu",
+      "options": [
+        {
+          "value": "eu",
+          "label": { "en": "Europe", "fr": "Europe", "de": "Europa", "es": "Europa" }
+        },
+        {
+          "value": "usa",
+          "label": {
+            "en": "United States",
+            "fr": "États-Unis",
+            "de": "Vereinigte Staaten",
+            "es": "Estados Unidos"
+          }
+        },
+        { "value": "cn", "label": { "en": "China", "fr": "Chine", "de": "China", "es": "China" } },
+        {
+          "value": "rus",
+          "label": { "en": "Russia", "fr": "Russie", "de": "Russland", "es": "Rusia" }
+        }
+      ]
+    },
+    {
+      "key": "poll_frequency",
+      "type": "number",
+      "label": {
+        "en": "Refresh interval (s)",
+        "fr": "Intervalle de rafraîchissement (s)",
+        "de": "Aktualisierungsintervall (s)",
+        "es": "Intervalo de actualización (s)"
+      },
+      "description": {
+        "en": "How often the units are read from the AUX cloud, in seconds.",
+        "fr": "Fréquence de lecture des appareils sur le cloud AUX, en secondes.",
+        "de": "Wie oft die Geräte aus der AUX-Cloud gelesen werden, in Sekunden.",
+        "es": "Frecuencia de lectura de los equipos en la nube AUX, en segundos."
+      },
+      "required": false,
+      "default": 60,
+      "min": 30,
+      "max": 3600
+    }
+  ],
+  "actions": [
+    {
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "timeout_seconds": 60
+    }
+  ],
+  "scene_triggers": [
+    {
+      "key": "power_changed",
+      "label": {
+        "en": "AUX unit turned on or off",
+        "fr": "Appareil AUX allumé ou éteint",
+        "de": "AUX-Gerät ein- oder ausgeschaltet",
+        "es": "Equipo AUX encendido o apagado"
+      },
+      "description": {
+        "en": "An air conditioner (or the heating of a heat pump) was turned on or off, from Gladys, the remote or the app.",
+        "fr": "Un climatiseur (ou le chauffage d'une pompe à chaleur) a été allumé ou éteint, depuis Gladys, la télécommande ou l'application.",
+        "de": "Eine Klimaanlage (oder die Heizung einer Wärmepumpe) wurde ein- oder ausgeschaltet, über Gladys, die Fernbedienung oder die App.",
+        "es": "Un aire acondicionado (o la calefacción de una bomba de calor) se encendió o apagó, desde Gladys, el mando o la aplicación."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Unit", "fr": "Appareil", "de": "Gerät", "es": "Equipo" }
+        },
+        {
+          "key": "state",
+          "type": "select",
+          "label": {
+            "en": "New state",
+            "fr": "Nouvel état",
+            "de": "Neuer Zustand",
+            "es": "Nuevo estado"
+          },
+          "options": [
+            {
+              "value": "on",
+              "label": { "en": "On", "fr": "Allumé", "de": "An", "es": "Encendido" }
+            },
+            {
+              "value": "off",
+              "label": { "en": "Off", "fr": "Éteint", "de": "Aus", "es": "Apagado" }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "state",
+          "type": "string",
+          "label": {
+            "en": "New state",
+            "fr": "Nouvel état",
+            "de": "Neuer Zustand",
+            "es": "Nuevo estado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "error_detected",
+      "label": {
+        "en": "AUX unit reports an error",
+        "fr": "Appareil AUX en erreur",
+        "de": "AUX-Gerät meldet einen Fehler",
+        "es": "Equipo AUX informa de un error"
+      },
+      "description": {
+        "en": "A unit raised its error flag (the error code is available to the scene).",
+        "fr": "Un appareil a levé son indicateur d'erreur (le code d'erreur est disponible dans la scène).",
+        "de": "Ein Gerät hat sein Fehlerkennzeichen gesetzt (der Fehlercode steht der Szene zur Verfügung).",
+        "es": "Un equipo activó su indicador de error (el código de error está disponible en la escena)."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Unit", "fr": "Appareil", "de": "Gerät", "es": "Equipo" }
+        }
+      ],
+      "variables": [
+        {
+          "key": "error_code",
+          "type": "number",
+          "label": {
+            "en": "Error code",
+            "fr": "Code d'erreur",
+            "de": "Fehlercode",
+            "es": "Código de error"
+          }
+        }
+      ]
+    },
+    {
+      "key": "availability_changed",
+      "label": {
+        "en": "AUX unit online or offline",
+        "fr": "Appareil AUX en ligne ou hors ligne",
+        "de": "AUX-Gerät online oder offline",
+        "es": "Equipo AUX en línea o sin conexión"
+      },
+      "description": {
+        "en": "A unit lost or regained its connection to the AUX cloud.",
+        "fr": "Un appareil a perdu ou retrouvé sa connexion au cloud AUX.",
+        "de": "Ein Gerät hat die Verbindung zur AUX-Cloud verloren oder wiederhergestellt.",
+        "es": "Un equipo perdió o recuperó su conexión con la nube AUX."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Unit", "fr": "Appareil", "de": "Gerät", "es": "Equipo" }
+        },
+        {
+          "key": "status",
+          "type": "select",
+          "label": { "en": "Status", "fr": "Statut", "de": "Status", "es": "Estado" },
+          "options": [
+            {
+              "value": "online",
+              "label": { "en": "Online", "fr": "En ligne", "de": "Online", "es": "En línea" }
+            },
+            {
+              "value": "offline",
+              "label": {
+                "en": "Offline",
+                "fr": "Hors ligne",
+                "de": "Offline",
+                "es": "Sin conexión"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "status",
+          "type": "string",
+          "label": { "en": "Status", "fr": "Statut", "de": "Status", "es": "Estado" }
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "set_climate",
+      "label": {
+        "en": "Set an air conditioner",
+        "fr": "Régler un climatiseur",
+        "de": "Klimaanlage einstellen",
+        "es": "Ajustar un aire acondicionado"
+      },
+      "description": {
+        "en": "Power, mode, target temperature and fan speed in a single command. Empty fields are left unchanged.",
+        "fr": "Marche, mode, consigne et ventilation en une seule commande. Les champs vides ne sont pas modifiés.",
+        "de": "Betrieb, Modus, Solltemperatur und Lüfterstufe in einem Befehl. Leere Felder bleiben unverändert.",
+        "es": "Encendido, modo, temperatura objetivo y ventilador en un solo comando. Los campos vacíos no se modifican."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Air conditioner",
+            "fr": "Climatiseur",
+            "de": "Klimaanlage",
+            "es": "Aire acondicionado"
+          },
+          "required": true
+        },
+        {
+          "key": "power",
+          "type": "select",
+          "label": { "en": "Power", "fr": "Marche", "de": "Betrieb", "es": "Encendido" },
+          "options": [
+            {
+              "value": "on",
+              "label": { "en": "On", "fr": "Allumé", "de": "An", "es": "Encendido" }
+            },
+            {
+              "value": "off",
+              "label": { "en": "Off", "fr": "Éteint", "de": "Aus", "es": "Apagado" }
+            }
+          ]
+        },
+        {
+          "key": "mode",
+          "type": "select",
+          "label": { "en": "Mode", "fr": "Mode", "de": "Modus", "es": "Modo" },
+          "options": [
+            {
+              "value": "auto",
+              "label": { "en": "Auto", "fr": "Auto", "de": "Auto", "es": "Auto" }
+            },
+            {
+              "value": "cool",
+              "label": { "en": "Cooling", "fr": "Froid", "de": "Kühlen", "es": "Frío" }
+            },
+            {
+              "value": "heat",
+              "label": { "en": "Heating", "fr": "Chaud", "de": "Heizen", "es": "Calor" }
+            },
+            {
+              "value": "dry",
+              "label": {
+                "en": "Dry",
+                "fr": "Déshumidification",
+                "de": "Entfeuchten",
+                "es": "Deshumidificación"
+              }
+            },
+            {
+              "value": "fan",
+              "label": {
+                "en": "Fan only",
+                "fr": "Ventilation",
+                "de": "Nur Lüften",
+                "es": "Ventilación"
+              }
+            }
+          ]
+        },
+        {
+          "key": "target_temperature",
+          "type": "number",
+          "label": {
+            "en": "Target temperature (°C)",
+            "fr": "Consigne (°C)",
+            "de": "Solltemperatur (°C)",
+            "es": "Temperatura objetivo (°C)"
+          },
+          "placeholder": { "en": "e.g. 22", "fr": "ex. 22", "de": "z. B. 22", "es": "p. ej. 22" },
+          "min": 16,
+          "max": 32
+        },
+        {
+          "key": "fan_speed",
+          "type": "select",
+          "label": {
+            "en": "Fan speed",
+            "fr": "Vitesse de ventilation",
+            "de": "Lüfterstufe",
+            "es": "Velocidad del ventilador"
+          },
+          "options": [
+            {
+              "value": "auto",
+              "label": { "en": "Auto", "fr": "Auto", "de": "Auto", "es": "Auto" }
+            },
+            {
+              "value": "quiet",
+              "label": { "en": "Quiet", "fr": "Silence", "de": "Leise", "es": "Silencio" }
+            },
+            {
+              "value": "low",
+              "label": { "en": "Low", "fr": "Faible", "de": "Niedrig", "es": "Baja" }
+            },
+            {
+              "value": "medium",
+              "label": { "en": "Medium", "fr": "Moyenne", "de": "Mittel", "es": "Media" }
+            },
+            {
+              "value": "high",
+              "label": { "en": "High", "fr": "Forte", "de": "Hoch", "es": "Alta" }
+            },
+            {
+              "value": "turbo",
+              "label": { "en": "Turbo", "fr": "Turbo", "de": "Turbo", "es": "Turbo" }
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "key": "applied",
+          "type": "boolean",
+          "label": {
+            "en": "Command sent",
+            "fr": "Commande envoyée",
+            "de": "Befehl gesendet",
+            "es": "Comando enviado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "set_hot_water",
+      "label": {
+        "en": "Set heat pump hot water",
+        "fr": "Régler l'eau chaude (PAC)",
+        "de": "Warmwasser der Wärmepumpe",
+        "es": "Ajustar agua caliente (bomba)"
+      },
+      "description": {
+        "en": "Hot water production, setpoint and fast heating of a heat pump. Empty fields are left unchanged.",
+        "fr": "Production d'eau chaude, consigne et chauffe rapide d'une pompe à chaleur. Les champs vides ne sont pas modifiés.",
+        "de": "Warmwasserbereitung, Sollwert und Schnellaufheizung einer Wärmepumpe. Leere Felder bleiben unverändert.",
+        "es": "Producción de agua caliente, consigna y calentamiento rápido de una bomba de calor. Los campos vacíos no se modifican."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Heat pump",
+            "fr": "Pompe à chaleur",
+            "de": "Wärmepumpe",
+            "es": "Bomba de calor"
+          },
+          "required": true
+        },
+        {
+          "key": "power",
+          "type": "select",
+          "label": {
+            "en": "Hot water",
+            "fr": "Eau chaude",
+            "de": "Warmwasser",
+            "es": "Agua caliente"
+          },
+          "options": [
+            {
+              "value": "on",
+              "label": { "en": "On", "fr": "Allumée", "de": "An", "es": "Encendida" }
+            },
+            {
+              "value": "off",
+              "label": { "en": "Off", "fr": "Éteinte", "de": "Aus", "es": "Apagada" }
+            }
+          ]
+        },
+        {
+          "key": "target_temperature",
+          "type": "number",
+          "label": {
+            "en": "Water temperature (°C)",
+            "fr": "Température de l'eau (°C)",
+            "de": "Wassertemperatur (°C)",
+            "es": "Temperatura del agua (°C)"
+          },
+          "placeholder": { "en": "e.g. 50", "fr": "ex. 50", "de": "z. B. 50", "es": "p. ej. 50" },
+          "min": 0,
+          "max": 75
+        },
+        {
+          "key": "boost",
+          "type": "select",
+          "label": {
+            "en": "Fast hot water",
+            "fr": "Chauffe rapide",
+            "de": "Schnellaufheizung",
+            "es": "Agua caliente rápida"
+          },
+          "options": [
+            {
+              "value": "on",
+              "label": { "en": "On", "fr": "Activée", "de": "An", "es": "Activada" }
+            },
+            {
+              "value": "off",
+              "label": { "en": "Off", "fr": "Désactivée", "de": "Aus", "es": "Desactivada" }
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "key": "applied",
+          "type": "boolean",
+          "label": {
+            "en": "Command sent",
+            "fr": "Commande envoyée",
+            "de": "Befehl gesendet",
+            "es": "Comando enviado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "turn_off_all",
+      "label": {
+        "en": "Turn off all AUX units",
+        "fr": "Éteindre tous les appareils AUX",
+        "de": "Alle AUX-Geräte ausschalten",
+        "es": "Apagar todos los equipos AUX"
+      },
+      "description": {
+        "en": "Turns off every air conditioner and heat pump heating that is on, e.g. when leaving home.",
+        "fr": "Éteint tous les climatiseurs et chauffages de pompe à chaleur allumés, par exemple en quittant la maison.",
+        "de": "Schaltet alle eingeschalteten Klimaanlagen und Wärmepumpenheizungen aus, z. B. beim Verlassen des Hauses.",
+        "es": "Apaga todos los aires acondicionados y calefacciones de bomba de calor encendidos, p. ej. al salir de casa."
+      },
+      "timeout_seconds": 60,
+      "outputs": [
+        {
+          "key": "turned_off",
+          "type": "number",
+          "label": {
+            "en": "Units turned off",
+            "fr": "Appareils éteints",
+            "de": "Ausgeschaltete Geräte",
+            "es": "Equipos apagados"
+          }
+        }
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "key": "aux_overview",
+      "label": {
+        "en": "AUX units",
+        "fr": "Appareils AUX",
+        "de": "AUX-Geräte",
+        "es": "Equipos AUX"
+      },
+      "description": {
+        "en": "Every AUX unit at a glance, with a button to turn them all off.",
+        "fr": "Tous les appareils AUX en un coup d'œil, avec un bouton pour tout éteindre.",
+        "de": "Alle AUX-Geräte auf einen Blick, mit einer Taste zum Ausschalten aller Geräte.",
+        "es": "Todos los equipos AUX de un vistazo, con un botón para apagarlos todos."
+      },
+      "icon": "wind",
+      "action_timeout_seconds": 60
+    },
+    {
+      "key": "aux_unit",
+      "label": {
+        "en": "AUX unit",
+        "fr": "Appareil AUX",
+        "de": "AUX-Gerät",
+        "es": "Equipo AUX"
+      },
+      "description": {
+        "en": "One air conditioner or heat pump: live temperatures and quick controls.",
+        "fr": "Un climatiseur ou une pompe à chaleur : températures en direct et commandes rapides.",
+        "de": "Eine Klimaanlage oder Wärmepumpe: Live-Temperaturen und Schnellsteuerung.",
+        "es": "Un aire acondicionado o bomba de calor: temperaturas en directo y controles rápidos."
+      },
+      "icon": "thermometer",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Unit", "fr": "Appareil", "de": "Gerät", "es": "Equipo" },
+          "required": true
+        }
+      ]
+    }
+  ]
+}
